@@ -1,16 +1,111 @@
-body { padding: 0; margin: 0 }
-#unity-container { position: absolute }
-#unity-container.unity-desktop { left: 50%; top: 50%; transform: translate(-50%, -50%) }
-#unity-container.unity-mobile { position: fixed; width: 100%; height: 100% }
-#unity-canvas { background: #231F20 }
-.unity-mobile #unity-canvas { width: 100%; height: 100% }
-#unity-loading-bar { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none }
-#unity-logo { width: 154px; height: 130px; background: url('unity-logo-dark.png') no-repeat center }
-#unity-progress-bar-empty { width: 141px; height: 18px; margin-top: 10px; margin-left: 6.5px; background: url('progress-bar-empty-dark.png') no-repeat center }
-#unity-progress-bar-full { width: 0%; height: 18px; margin-top: 10px; background: url('progress-bar-full-dark.png') no-repeat center }
-#unity-footer { position: relative }
-.unity-mobile #unity-footer { display: none }
-#unity-webgl-logo { float:left; width: 204px; height: 38px; background: url('webgl-logo.png') no-repeat center }
-#unity-build-title { float: right; margin-right: 10px; line-height: 38px; font-family: arial; font-size: 18px }
-#unity-fullscreen-button { cursor:pointer; float: right; width: 38px; height: 38px; background: url('fullscreen-button.png') no-repeat center }
-#unity-warning { position: absolute; left: 50%; top: 5%; transform: translate(-50%); background: white; padding: 10px; display: none }
+body { 
+    padding: 0; 
+    margin: 0;
+}
+
+#unity-container { 
+    position: absolute;
+    left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+
+}
+
+#unity-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+ /* 加载百分比文本样式：居中显示在进度条下方 */
+ #unity-progress-percent {
+    display: block;
+    text-align: center;
+    margin-bottom: 12px; /* 与进度条保持间距 */
+    font-size: 16px;  /* 文本大小 */
+    color: #333;      /* 文本颜色（可根据需求调整） */
+    font-family: "Arial", sans-serif; /* 字体 */
+  }
+  /* 移动端适配：调整文本大小 */
+  .unity-mobile #unity-progress-percent {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+
+#unity-container.unity-desktop {
+    position: absolute;
+}
+
+#unity-container.unity-mobile {
+	position: fixed;
+	width: 100%;
+	height: 100%
+}
+
+#unity-canvas {
+	background-image: url('bg-Image.png') !important;
+	background-size: cover !important;
+}
+
+.unity-mobile #unity-canvas {
+	width: 100%;
+	height: 100%
+}
+
+/* 进度条设置 */
+#unity-loading-bar { 
+    position: absolute; 
+    left: 50%; 
+    bottom: 20%;
+    transform: translateX(-50%);
+    display: none;
+    z-index: 10;
+    width: 80%;
+}
+
+#unity-progress-bar-empty,
+#unity-progress-bar-full {
+    height: auto;
+    min-height: 15px;
+    margin: 0;
+    background-size: cover !important;
+}
+
+#unity-progress-bar-empty {
+    background: url('progress-bar-empty-dark.png') no-repeat right;
+}
+
+#unity-progress-bar-full {
+    background: url('progress-bar-full-dark.png') no-repeat left;
+}
+
+/* 移除logo */
+#unity-logo {
+    display: none !important;
+}
+
+#unity-footer { 
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.unity-mobile #unity-footer { 
+    display: none;
+}
+
+#unity-warning { 
+    position: absolute; 
+    left: 50%; 
+    top: 5%; 
+    transform: translate(-50%); 
+    background: white; 
+    padding: 10px; 
+    display: none;
+    z-index: 20;
+}

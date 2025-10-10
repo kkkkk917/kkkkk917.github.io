@@ -1,0 +1,76 @@
+{
+  "questions": [
+    {
+      "question": "国家当年决定开展“三线建设”的最主要原因是：",
+      "options": [
+        "A. 发展沿海经济",
+        "B. 应对战争威胁、建立战略后方",
+        "C. 推广农业机械化",
+        "D. 迎接改革开放"
+      ],
+      "correctAnswerIndices": [1],
+      "isMultipleChoice": false,
+      "points": 4
+    },
+    {
+      "question": "成昆铁路最终选择“西线方案”的核心战略考量是？",
+      "options": [
+        "A. 降低工程造价",
+        "B. 缩短线路里程",
+        "C. 服务西南民众，开发矿产资源",
+        "D. 减少隧道施工量"
+      ],
+      "correctAnswerIndices": [2],
+      "isMultipleChoice": false,
+      "points": 4
+    },
+    {
+      "question": "成昆铁路全线建成通车的具体日期是？",
+      "options": [
+        "A. 1969年7月1日",
+        "B. 1970年7月1日",
+        "C. 1970年1月1日",
+        "D. 1971年1月1日"
+      ],
+      "correctAnswerIndices": [1],
+      "isMultipleChoice": false,
+      "points": 4
+    },
+    {
+      "question": "成昆铁路与苏联卫星、美国登月并列，被联合国称为？",
+      "options": [
+        "A. 人类工程技术三大巅峰",
+        "B. 象征20世纪人类征服自然的三大奇迹",
+        "C. 现代交通建设三大杰作",
+        "D. 20世纪最伟大三项工程"
+      ],
+      "correctAnswerIndices": [1],
+      "isMultipleChoice": false,
+      "points": 4
+    },
+    {
+      "question": "三线建设中“两基一线”中的“一线”指的是哪一条铁路？",
+      "options": [
+        "A. 成渝铁路",
+        "B. 成昆铁路",
+        "C. 宝成铁路",
+        "D. 川黔铁路"
+      ],
+      "correctAnswerIndices": [1],
+      "isMultipleChoice": false,
+      "points": 4
+    },
+    {
+      "question": "成昆铁路沙木拉达隧道施工的最大难题是：",
+      "options": [
+        "A. 高原缺氧",
+        "B. 瓦斯和塌方",
+        "C. 台风暴雨",
+        "D. 沙漠缺水"
+      ],
+      "correctAnswerIndices": [1],
+      "isMultipleChoice": false,
+      "points": 4
+    }
+  ]
+}
