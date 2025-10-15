@@ -6,8 +6,62 @@
     <title>红色家书</title>
     <link rel="shortcut icon" href="TemplateData/Myfavicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+    <style>
+      /* 添加横屏提示样式 */
+      #orientation-message {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        color: white;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        z-index: 1000;
+        text-align: center;
+        font-family: Arial, sans-serif;
+      }
+      
+      #orientation-message h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      
+      #orientation-message p {
+        font-size: 16px;
+      }
+      
+      /* 竖屏时隐藏游戏内容 */
+      @media (orientation: portrait) {
+        #orientation-message {
+          display: flex;
+        }
+        #unity-container {
+          display: none !important;
+        }
+      }
+      
+      /* 横屏时显示游戏内容 */
+      @media (orientation: landscape) {
+        #orientation-message {
+          display: none;
+        }
+        #unity-container {
+          display: block !important;
+        }
+      }
+    </style>
   </head>
   <body>
+    <!-- 添加横屏提示 -->
+    <div id="orientation-message">
+      <h2>🌓 请横屏游戏</h2>
+      <p>为了更好的游戏体验，请将设备旋转至横屏模式</p>
+    </div>
+    
     <div id="unity-container" class="unity-desktop">
       <canvas id="unity-canvas" width=960 height=540 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
@@ -24,6 +78,31 @@
       </div>
     </div>
     <script>
+      // 横屏检测函数
+      function checkOrientation() {
+        var orientationMessage = document.getElementById('orientation-message');
+        var unityContainer = document.getElementById('unity-container');
+        
+        // 检测是否是竖屏
+        var isPortrait = window.innerHeight > window.innerWidth;
+        
+        if (isPortrait) {
+          // 竖屏模式，显示提示
+          orientationMessage.style.display = 'flex';
+          unityContainer.style.display = 'none';
+        } else {
+          // 横屏模式，隐藏提示
+          orientationMessage.style.display = 'none';
+          unityContainer.style.display = 'block';
+        }
+      }
+      
+      // 页面加载时检查方向
+      window.addEventListener('load', checkOrientation);
+      // 窗口大小变化时检查方向
+      window.addEventListener('resize', checkOrientation);
+      // 设备方向变化时检查
+      window.addEventListener('orientationchange', checkOrientation);
 
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
@@ -57,11 +136,11 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/hongse14.loader.js";
+      var loaderUrl = buildUrl + "/hongse15.loader.js";
       var config = {
-        dataUrl: buildUrl + "/hongse14.data",
-        frameworkUrl: buildUrl + "/hongse14.framework.js",
-        codeUrl: buildUrl + "/hongse14.wasm",
+        dataUrl: buildUrl + "/hongse15.data",
+        frameworkUrl: buildUrl + "/hongse15.framework.js",
+        codeUrl: buildUrl + "/hongse15.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "红色家书",
@@ -90,6 +169,8 @@
         // performance, uncomment the following line:
         // config.devicePixelRatio = 1;
 
+        // 移动设备加载时检查方向
+        setTimeout(checkOrientation, 100);
 
       } else {
         // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
@@ -107,15 +188,16 @@
           progressBarFull.style.width = 100 * progress + "%";
           var percent = Math.round(progress * 100);
           progressPercentText.textContent =  "加载中..."+ percent + "%";
-              }).then((unityInstance) => {
-                loadingBar.style.display = "none";
-              }).catch((message) => {
-                alert(message);
-              });
-            };
+        }).then((unityInstance) => {
+          loadingBar.style.display = "none";
+          // Unity加载完成后再次检查方向
+          checkOrientation();
+        }).catch((message) => {
+          alert(message);
+        });
+      };
 
       document.body.appendChild(script);
-
     </script>
   </body>
 </html>
