@@ -8,6 +8,19 @@
     <link rel="shortcut icon" href="TemplateData/Myfavicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <style>
+      /* 重置样式 */
+      * {
+        box-sizing: border-box;
+      }
+      body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: black;
+      }
+
       /* 添加横屏提示样式 */
       #orientation-message {
         display: none;
@@ -51,20 +64,11 @@
           display: none;
         }
         #unity-container {
-          display: block !important;
+          display: flex !important;
         }
       }
 
       /* 强制16:9比例和居中显示的样式 */
-      body, html {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: black;
-      }
-      
       #unity-container {
         position: fixed;
         top: 0;
@@ -75,10 +79,19 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        z-index: 1;
       }
       
       #unity-canvas {
         background: #231F20;
+        display: block;
+      }
+      
+      /* 初始加载时的临时样式 - 确保Canvas在应用JS前就居中 */
+      #unity-canvas:not([style]) {
+        width: 90vmin;
+        height: 50.625vmin; /* 90 * 9/16 */
+        margin: auto;
       }
       
       /* 全屏时的特殊样式 */
@@ -131,15 +144,26 @@
           var canvas = document.getElementById('unity-canvas');
           var container = document.getElementById('unity-container');
           
-          if (!canvas || !container) return;
+          if (!canvas || !container) {
+              console.log('Canvas or container not found');
+              return;
+          }
           
           // 获取屏幕尺寸
           var screenWidth = window.innerWidth;
           var screenHeight = window.innerHeight;
           
+          console.log('Screen size: ' + screenWidth + 'x' + screenHeight);
+          
           // 计算16:9的适配尺寸
           var targetAspect = 16 / 9;
           var screenAspect = screenWidth / screenHeight;
+          
+          // 重置Canvas样式
+          canvas.style.position = '';
+          canvas.style.left = '';
+          canvas.style.top = '';
+          canvas.style.margin = '';
           
           if (screenAspect > targetAspect) {
             // 屏幕更宽，左右加黑边
@@ -147,21 +171,17 @@
             var width = height * targetAspect;
             canvas.style.width = width + 'px';
             canvas.style.height = height + 'px';
-            canvas.style.position = 'relative';
-            canvas.style.left = ((screenWidth - width) / 2) + 'px';
-            canvas.style.top = '0px';
+            canvas.style.margin = '0 auto'; // 水平居中
           } else {
             // 屏幕更高，上下加黑边
             var width = screenWidth;
             var height = width / targetAspect;
             canvas.style.width = width + 'px';
             canvas.style.height = height + 'px';
-            canvas.style.position = 'relative';
-            canvas.style.left = '0px';
-            canvas.style.top = ((screenHeight - height) / 2) + 'px';
+            canvas.style.margin = 'auto'; // 水平和垂直居中
           }
           
-          console.log('Applied 16:9 aspect ratio CSS: ' + screenWidth + 'x' + screenHeight);
+          console.log('Canvas size: ' + canvas.style.width + ' x ' + canvas.style.height);
       };
 
       // 横屏检测函数
@@ -185,10 +205,21 @@
           }
       }
       
-      // 页面加载时检查方向
-      window.addEventListener('load', function() {
-          checkOrientation();
+      // 页面加载时立即应用样式
+      window.addEventListener('DOMContentLoaded', function() {
+          console.log('DOM loaded, applying initial styles');
+          // 立即应用一次样式
           window.ApplyAspectRatioCSS();
+      });
+      
+      // 页面完全加载后再次检查
+      window.addEventListener('load', function() {
+          console.log('Page fully loaded');
+          checkOrientation();
+          // 延迟一点确保所有元素已加载
+          setTimeout(function() {
+              window.ApplyAspectRatioCSS();
+          }, 50);
       });
       
       // 窗口大小变化时检查方向
@@ -207,7 +238,7 @@
           }, 300);
       });
 
-      // 全屏变化事件 - 增强版本
+      // 全屏变化事件
       function handleFullscreenChange() {
           setTimeout(function() {
               // 强制重新计算尺寸
@@ -259,11 +290,11 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/hongse18.loader.js";
+      var loaderUrl = buildUrl + "/hongse20.loader.js";
       var config = {
-          dataUrl: buildUrl + "/hongse18.data",
-          frameworkUrl: buildUrl + "/hongse18.framework.js",
-          codeUrl: buildUrl + "/hongse18.wasm",
+          dataUrl: buildUrl + "/hongse20.data",
+          frameworkUrl: buildUrl + "/hongse20.framework.js",
+          codeUrl: buildUrl + "/hongse20.wasm",
           streamingAssetsUrl: "StreamingAssets",
           companyName: "DefaultCompany",
           productName: "红色家书",
@@ -286,7 +317,10 @@
 
       } else {
           // 桌面端也使用CSS控制尺寸
-          window.ApplyAspectRatioCSS();
+          // 初始设置一个合理的默认尺寸
+          canvas.style.width = "960px";
+          canvas.style.height = "540px";
+          canvas.style.margin = "auto";
       }
 
       loadingBar.style.display = "block";
@@ -308,8 +342,10 @@
               
               // 监听Unity的全屏事件
               if (unityInstance.Module) {
+                  var originalResize = unityInstance.Module.onResize;
                   unityInstance.Module.onResize = function() {
                       setTimeout(window.ApplyAspectRatioCSS, 100);
+                      if (originalResize) originalResize();
                   };
               }
           }).catch((message) => {
