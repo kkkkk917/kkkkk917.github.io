@@ -8,20 +8,21 @@
     <link rel="shortcut icon" href="TemplateData/Myfavicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <style>
-      /* 重置样式 */
+      /* 基础重置 */
       * {
-        box-sizing: border-box;
-      }
-      body, html {
         margin: 0;
         padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body, html {
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background: black;
+        background: #000;
       }
 
-      /* 添加横屏提示样式 */
+      /* 横屏提示样式 */
       #orientation-message {
         display: none;
         position: fixed;
@@ -39,16 +40,7 @@
         font-family: Arial, sans-serif;
       }
       
-      #orientation-message h2 {
-        font-size: 24px;
-        margin-bottom: 20px;
-      }
-      
-      #orientation-message p {
-        font-size: 16px;
-      }
-      
-      /* 竖屏时隐藏游戏内容 */
+      /* 竖屏时显示提示 */
       @media (orientation: portrait) {
         #orientation-message {
           display: flex;
@@ -58,73 +50,58 @@
         }
       }
       
-      /* 横屏时显示游戏内容 */
+      /* 横屏时显示游戏 */
       @media (orientation: landscape) {
         #orientation-message {
           display: none;
         }
         #unity-container {
-          display: flex !important;
+          display: block !important;
         }
       }
 
-      /* 强制16:9比例和居中显示的样式 */
+      /* 游戏容器 - 始终全屏黑色背景 */
       #unity-container {
         position: fixed;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background: black;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        width: 100vw;
+        height: 100vh;
+        background: #000;
         z-index: 1;
       }
       
+      /* Canvas容器 - 用于居中Canvas */
+      #canvas-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #000;
+      }
+      
+      /* Canvas本身 */
       #unity-canvas {
-        background: #231F20;
         display: block;
-      }
-      
-      /* 初始加载时的临时样式 - 确保Canvas在应用JS前就居中 */
-      #unity-canvas:not([style]) {
-        width: 90vmin;
-        height: 50.625vmin; /* 90 * 9/16 */
-        margin: auto;
-      }
-      
-      /* 全屏时的特殊样式 */
-      #unity-container:fullscreen {
-        width: 100vw !important;
-        height: 100vh !important;
-      }
-      
-      #unity-container:-webkit-full-screen {
-        width: 100vw !important;
-        height: 100vh !important;
-      }
-      
-      #unity-container:-moz-full-screen {
-        width: 100vw !important;
-        height: 100vh !important;
-      }
-      
-      #unity-container:-ms-fullscreen {
-        width: 100vw !important;
-        height: 100vh !important;
+        background: #231F20;
       }
     </style>
   </head>
   <body>
-    <!-- 添加横屏提示 -->
+    <!-- 横屏提示 -->
     <div id="orientation-message">
       <h2>🌓 请横屏游戏</h2>
       <p>为了更好的游戏体验，请将设备旋转至横屏模式</p>
     </div>
     
+    <!-- 游戏容器 -->
     <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=960 height=540 tabindex="-1"></canvas>
+      <!-- 新增Canvas容器用于居中 -->
+      <div id="canvas-container">
+        <canvas id="unity-canvas" width=960 height=540 tabindex="-1"></canvas>
+      </div>
+      
+      <!-- Unity UI元素 -->
       <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-percent">0%</div>
@@ -138,132 +115,91 @@
         <div id="unity-fullscreen-button"></div>
       </div>
     </div>
+
     <script>
-      // 应用16:9比例的CSS样式函数 - 确保在全局作用域
-      window.ApplyAspectRatioCSS = function() {
-          var canvas = document.getElementById('unity-canvas');
-          var container = document.getElementById('unity-container');
-          
-          if (!canvas || !container) {
-              console.log('Canvas or container not found');
-              return;
-          }
-          
-          // 获取屏幕尺寸
-          var screenWidth = window.innerWidth;
-          var screenHeight = window.innerHeight;
-          
-          console.log('Screen size: ' + screenWidth + 'x' + screenHeight);
-          
-          // 计算16:9的适配尺寸
-          var targetAspect = 16 / 9;
-          var screenAspect = screenWidth / screenHeight;
-          
-          // 重置Canvas样式
-          canvas.style.position = '';
-          canvas.style.left = '';
-          canvas.style.top = '';
-          canvas.style.margin = '';
-          
-          if (screenAspect > targetAspect) {
-            // 屏幕更宽，左右加黑边
-            var height = screenHeight;
-            var width = height * targetAspect;
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
-            canvas.style.margin = '0 auto'; // 水平居中
-          } else {
-            // 屏幕更高，上下加黑边
-            var width = screenWidth;
-            var height = width / targetAspect;
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
-            canvas.style.margin = 'auto'; // 水平和垂直居中
-          }
-          
-          console.log('Canvas size: ' + canvas.style.width + ' x ' + canvas.style.height);
-      };
-
-      // 横屏检测函数
+      // 核心函数：根据屏幕比例调整Canvas尺寸和位置
+      function adjustCanvasSize() {
+        const canvas = document.getElementById('unity-canvas');
+        const container = document.getElementById('canvas-container');
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        
+        // 目标宽高比 16:9
+        const targetAspect = 16 / 9;
+        const screenAspect = screenWidth / screenHeight;
+        
+        let canvasWidth, canvasHeight;
+        
+        if (screenAspect > targetAspect) {
+          // 屏幕更宽，上下加黑边
+          canvasHeight = screenHeight;
+          canvasWidth = canvasHeight * targetAspect;
+        } else {
+          // 屏幕更高，左右加黑边
+          canvasWidth = screenWidth;
+          canvasHeight = canvasWidth / targetAspect;
+        }
+        
+        // 设置Canvas尺寸
+        canvas.style.width = canvasWidth + 'px';
+        canvas.style.height = canvasHeight + 'px';
+        
+        // 设置容器尺寸与Canvas相同
+        container.style.width = canvasWidth + 'px';
+        container.style.height = canvasHeight + 'px';
+        
+        console.log(`屏幕: ${screenWidth}x${screenHeight}, Canvas: ${canvasWidth}x${canvasHeight}`);
+      }
+      
+      // 横屏检测
       function checkOrientation() {
-          var orientationMessage = document.getElementById('orientation-message');
-          var unityContainer = document.getElementById('unity-container');
-          
-          // 检测是否是竖屏
-          var isPortrait = window.innerHeight > window.innerWidth;
-          
-          if (isPortrait) {
-              // 竖屏模式，显示提示
-              orientationMessage.style.display = 'flex';
-              unityContainer.style.display = 'none';
-          } else {
-              // 横屏模式，隐藏提示
-              orientationMessage.style.display = 'none';
-              unityContainer.style.display = 'flex'; // 使用flex确保居中
-              // 横屏时确保应用16:9样式
-              window.ApplyAspectRatioCSS();
-          }
+        const orientationMessage = document.getElementById('orientation-message');
+        const unityContainer = document.getElementById('unity-container');
+        const isPortrait = window.innerHeight > window.innerWidth;
+        
+        if (isPortrait) {
+          orientationMessage.style.display = 'flex';
+          unityContainer.style.display = 'none';
+        } else {
+          orientationMessage.style.display = 'none';
+          unityContainer.style.display = 'block';
+          adjustCanvasSize(); // 横屏时调整Canvas
+        }
       }
       
-      // 页面加载时立即应用样式
-      window.addEventListener('DOMContentLoaded', function() {
-          console.log('DOM loaded, applying initial styles');
-          // 立即应用一次样式
-          window.ApplyAspectRatioCSS();
-      });
-      
-      // 页面完全加载后再次检查
-      window.addEventListener('load', function() {
-          console.log('Page fully loaded');
+      // 初始化
+      function init() {
+        // 页面加载后立即调整Canvas
+        window.addEventListener('load', function() {
           checkOrientation();
-          // 延迟一点确保所有元素已加载
+          adjustCanvasSize();
+        });
+        
+        // 窗口大小变化时调整
+        window.addEventListener('resize', function() {
+          checkOrientation();
+          adjustCanvasSize();
+        });
+        
+        // 设备方向变化时调整
+        window.addEventListener('orientationchange', function() {
           setTimeout(function() {
-              window.ApplyAspectRatioCSS();
-          }, 50);
-      });
-      
-      // 窗口大小变化时检查方向
-      window.addEventListener('resize', function() {
-          setTimeout(function() {
-              checkOrientation();
-              window.ApplyAspectRatioCSS();
-          }, 100);
-      });
-      
-      // 设备方向变化时检查
-      window.addEventListener('orientationchange', function() {
-          setTimeout(function() {
-              checkOrientation();
-              window.ApplyAspectRatioCSS();
+            checkOrientation();
+            adjustCanvasSize();
           }, 300);
-      });
-
-      // 全屏变化事件
-      function handleFullscreenChange() {
-          setTimeout(function() {
-              // 强制重新计算尺寸
-              window.ApplyAspectRatioCSS();
-              
-              // 额外检查：如果全屏，确保容器正确设置
-              var container = document.getElementById('unity-container');
-              if (document.fullscreenElement || 
-                  document.webkitFullscreenElement || 
-                  document.mozFullScreenElement ||
-                  document.msFullscreenElement) {
-                  container.style.width = '100vw';
-                  container.style.height = '100vh';
-                  container.style.display = 'flex';
-                  container.style.justifyContent = 'center';
-                  container.style.alignItems = 'center';
-              }
-          }, 150);
+        });
+        
+        // 全屏变化时调整
+        document.addEventListener('fullscreenchange', adjustCanvasSize);
+        document.addEventListener('webkitfullscreenchange', adjustCanvasSize);
+        document.addEventListener('mozfullscreenchange', adjustCanvasSize);
+        document.addEventListener('MSFullscreenChange', adjustCanvasSize);
       }
       
-      document.addEventListener('fullscreenchange', handleFullscreenChange);
-      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-      document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-
+      // 立即执行初始化
+      init();
+      
+      // Unity相关代码
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
       var loadingBar = document.querySelector("#unity-loading-bar");
@@ -272,85 +208,72 @@
       var progressPercentText = document.querySelector("#unity-progress-percent");
 
       function unityShowBanner(msg, type) {
-          function updateBannerVisibility() {
-              warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-          }
-          var div = document.createElement('div');
-          div.innerHTML = msg;
-          warningBanner.appendChild(div);
-          if (type == 'error') div.style = 'background: red; padding: 10px;';
-          else {
-              if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-              setTimeout(function() {
-                  warningBanner.removeChild(div);
-                  updateBannerVisibility();
-              }, 5000);
-          }
-          updateBannerVisibility();
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
       }
 
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/hongse20.loader.js";
       var config = {
-          dataUrl: buildUrl + "/hongse20.data",
-          frameworkUrl: buildUrl + "/hongse20.framework.js",
-          codeUrl: buildUrl + "/hongse20.wasm",
-          streamingAssetsUrl: "StreamingAssets",
-          companyName: "DefaultCompany",
-          productName: "红色家书",
-          productVersion: "0.1",
-          showBanner: unityShowBanner,
+        dataUrl: buildUrl + "/hongse20.data",
+        frameworkUrl: buildUrl + "/hongse20.framework.js",
+        codeUrl: buildUrl + "/hongse20.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "红色家书",
+        productVersion: "0.1",
+        showBanner: unityShowBanner,
       };
 
-      // 禁用Unity的自动尺寸匹配
+      // 禁用Unity自动尺寸匹配
       config.matchWebGLToCanvasSize = false;
 
+      // 移动设备设置
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-          container.className = "unity-mobile";
-          canvas.className = "unity-mobile";
-
-          // 移动设备加载时检查方向
-          setTimeout(function() {
-              checkOrientation();
-              window.ApplyAspectRatioCSS();
-          }, 500);
-
-      } else {
-          // 桌面端也使用CSS控制尺寸
-          // 初始设置一个合理的默认尺寸
-          canvas.style.width = "960px";
-          canvas.style.height = "540px";
-          canvas.style.margin = "auto";
+        container.className = "unity-mobile";
+        canvas.className = "unity-mobile";
+        
+        // 移动设备加载后调整Canvas
+        setTimeout(function() {
+          checkOrientation();
+          adjustCanvasSize();
+        }, 500);
       }
 
       loadingBar.style.display = "block";
 
+      // 加载Unity
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
-          createUnityInstance(canvas, config, (progress) => {
-              progressBarFull.style.width = 100 * progress + "%";
-              var percent = Math.round(progress * 100);
-              progressPercentText.textContent = "加载中..." + percent + "%";
-          }).then((unityInstance) => {
-              loadingBar.style.display = "none";
-              // Unity加载完成后再次检查方向和应用样式
-              setTimeout(function() {
-                  checkOrientation();
-                  window.ApplyAspectRatioCSS();
-              }, 100);
-              
-              // 监听Unity的全屏事件
-              if (unityInstance.Module) {
-                  var originalResize = unityInstance.Module.onResize;
-                  unityInstance.Module.onResize = function() {
-                      setTimeout(window.ApplyAspectRatioCSS, 100);
-                      if (originalResize) originalResize();
-                  };
-              }
-          }).catch((message) => {
-              alert(message);
-          });
+        createUnityInstance(canvas, config, (progress) => {
+          progressBarFull.style.width = 100 * progress + "%";
+          var percent = Math.round(progress * 100);
+          progressPercentText.textContent = "加载中..." + percent + "%";
+        }).then((unityInstance) => {
+          loadingBar.style.display = "none";
+          
+          // Unity加载完成后调整Canvas
+          setTimeout(function() {
+            checkOrientation();
+            adjustCanvasSize();
+          }, 100);
+        }).catch((message) => {
+          alert(message);
+        });
       };
 
       document.body.appendChild(script);
