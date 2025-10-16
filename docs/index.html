@@ -56,7 +56,7 @@
           display: none;
         }
         #unity-container {
-          display: block !important;
+          display: flex !important; /* 使用flex确保内容居中 */
         }
       }
 
@@ -69,21 +69,19 @@
         height: 100vh;
         background: #000;
         z-index: 1;
-      }
-      
-      /* Canvas容器 - 用于居中Canvas */
-      #canvas-container {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #000;
+        justify-content: center;
+        align-items: center;
       }
       
       /* Canvas本身 */
       #unity-canvas {
         display: block;
         background: #231F20;
+        /* 初始设置一个合理的尺寸，避免加载时太小 */
+        width: 90vmin;
+        height: 50.625vmin; /* 90 * 9/16 = 50.625 */
+        max-width: 100%;
+        max-height: 100%;
       }
     </style>
   </head>
@@ -96,10 +94,7 @@
     
     <!-- 游戏容器 -->
     <div id="unity-container" class="unity-desktop">
-      <!-- 新增Canvas容器用于居中 -->
-      <div id="canvas-container">
-        <canvas id="unity-canvas" width=960 height=540 tabindex="-1"></canvas>
-      </div>
+      <canvas id="unity-canvas" width=960 height=540 tabindex="-1"></canvas>
       
       <!-- Unity UI元素 -->
       <div id="unity-loading-bar">
@@ -120,7 +115,6 @@
       // 核心函数：根据屏幕比例调整Canvas尺寸和位置
       function adjustCanvasSize() {
         const canvas = document.getElementById('unity-canvas');
-        const container = document.getElementById('canvas-container');
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         
@@ -144,10 +138,6 @@
         canvas.style.width = canvasWidth + 'px';
         canvas.style.height = canvasHeight + 'px';
         
-        // 设置容器尺寸与Canvas相同
-        container.style.width = canvasWidth + 'px';
-        container.style.height = canvasHeight + 'px';
-        
         console.log(`屏幕: ${screenWidth}x${screenHeight}, Canvas: ${canvasWidth}x${canvasHeight}`);
       }
       
@@ -162,14 +152,33 @@
           unityContainer.style.display = 'none';
         } else {
           orientationMessage.style.display = 'none';
-          unityContainer.style.display = 'block';
+          unityContainer.style.display = 'flex';
           adjustCanvasSize(); // 横屏时调整Canvas
+        }
+      }
+      
+      // 立即调整Canvas尺寸（不等待任何事件）
+      function immediateAdjust() {
+        // 确保DOM元素已存在
+        if (document.getElementById('unity-canvas')) {
+          adjustCanvasSize();
+        } else {
+          // 如果Canvas还不存在，稍后重试
+          setTimeout(immediateAdjust, 10);
         }
       }
       
       // 初始化
       function init() {
-        // 页面加载后立即调整Canvas
+        // 立即执行一次调整
+        immediateAdjust();
+        
+        // DOM加载完成后调整
+        document.addEventListener('DOMContentLoaded', function() {
+          adjustCanvasSize();
+        });
+        
+        // 页面加载后调整
         window.addEventListener('load', function() {
           checkOrientation();
           adjustCanvasSize();
