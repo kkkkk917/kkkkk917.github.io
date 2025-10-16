@@ -55,33 +55,6 @@
         #orientation-message {
           display: none;
         }
-        #unity-container {
-          display: flex !important; /* 使用flex确保内容居中 */
-        }
-      }
-
-      /* 游戏容器 - 始终全屏黑色背景 */
-      #unity-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: #000;
-        z-index: 1;
-        justify-content: center;
-        align-items: center;
-      }
-      
-      /* Canvas本身 */
-      #unity-canvas {
-        display: block;
-        background: #231F20;
-        /* 初始设置一个合理的尺寸，避免加载时太小 */
-        width: 90vmin;
-        height: 50.625vmin; /* 90 * 9/16 = 50.625 */
-        max-width: 100%;
-        max-height: 100%;
       }
     </style>
   </head>
@@ -92,11 +65,8 @@
       <p>为了更好的游戏体验，请将设备旋转至横屏模式</p>
     </div>
     
-    <!-- 游戏容器 -->
     <div id="unity-container" class="unity-desktop">
       <canvas id="unity-canvas" width=960 height=540 tabindex="-1"></canvas>
-      
-      <!-- Unity UI元素 -->
       <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-percent">0%</div>
@@ -110,15 +80,23 @@
         <div id="unity-fullscreen-button"></div>
       </div>
     </div>
-
     <script>
+      // 是否全屏的标志
+      let isFullscreenMode = false;
+      
       // 核心函数：根据屏幕比例调整Canvas尺寸和位置
       function adjustCanvasSize() {
         const canvas = document.getElementById('unity-canvas');
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         
-        // 目标宽高比 16:9
+        // 如果不是全屏模式，使用Unity默认尺寸
+        if (!isFullscreenMode) {
+          // 非全屏时使用Unity默认设置
+          return;
+        }
+        
+        // 全屏模式下，按16:9比例显示
         const targetAspect = 16 / 9;
         const screenAspect = screenWidth / screenHeight;
         
@@ -138,7 +116,13 @@
         canvas.style.width = canvasWidth + 'px';
         canvas.style.height = canvasHeight + 'px';
         
-        console.log(`屏幕: ${screenWidth}x${screenHeight}, Canvas: ${canvasWidth}x${canvasHeight}`);
+        // 居中Canvas
+        canvas.style.position = 'absolute';
+        canvas.style.left = '50%';
+        canvas.style.top = '50%';
+        canvas.style.transform = 'translate(-50%, -50%)';
+        
+        console.log(`全屏模式: Canvas ${canvasWidth}x${canvasHeight}`);
       }
       
       // 横屏检测
@@ -152,36 +136,28 @@
           unityContainer.style.display = 'none';
         } else {
           orientationMessage.style.display = 'none';
-          unityContainer.style.display = 'flex';
-          adjustCanvasSize(); // 横屏时调整Canvas
+          unityContainer.style.display = 'block';
         }
       }
       
-      // 立即调整Canvas尺寸（不等待任何事件）
-      function immediateAdjust() {
-        // 确保DOM元素已存在
-        if (document.getElementById('unity-canvas')) {
-          adjustCanvasSize();
-        } else {
-          // 如果Canvas还不存在，稍后重试
-          setTimeout(immediateAdjust, 10);
-        }
+      // 检测全屏状态变化
+      function handleFullscreenChange() {
+        isFullscreenMode = !!(
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullScreenElement ||
+          document.msFullscreenElement
+        );
+        
+        // 延迟一点时间确保全屏状态已更新
+        setTimeout(adjustCanvasSize, 100);
       }
       
       // 初始化
       function init() {
-        // 立即执行一次调整
-        immediateAdjust();
-        
-        // DOM加载完成后调整
-        document.addEventListener('DOMContentLoaded', function() {
-          adjustCanvasSize();
-        });
-        
-        // 页面加载后调整
+        // 页面加载后调整Canvas
         window.addEventListener('load', function() {
           checkOrientation();
-          adjustCanvasSize();
         });
         
         // 窗口大小变化时调整
@@ -199,16 +175,15 @@
         });
         
         // 全屏变化时调整
-        document.addEventListener('fullscreenchange', adjustCanvasSize);
-        document.addEventListener('webkitfullscreenchange', adjustCanvasSize);
-        document.addEventListener('mozfullscreenchange', adjustCanvasSize);
-        document.addEventListener('MSFullscreenChange', adjustCanvasSize);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
       }
       
       // 立即执行初始化
       init();
-      
-      // Unity相关代码
+
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
       var loadingBar = document.querySelector("#unity-loading-bar");
@@ -216,6 +191,12 @@
       var warningBanner = document.querySelector("#unity-warning");
       var progressPercentText = document.querySelector("#unity-progress-percent");
 
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      // Modify or remove this function to customize the visually presented
+      // way that non-critical warnings and error messages are presented to the
+      // user.
       function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
           warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
@@ -235,11 +216,11 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/hongse20.loader.js";
+      var loaderUrl = buildUrl + "/hongse21.loader.js";
       var config = {
-        dataUrl: buildUrl + "/hongse20.data",
-        frameworkUrl: buildUrl + "/hongse20.framework.js",
-        codeUrl: buildUrl + "/hongse20.wasm",
+        dataUrl: buildUrl + "/hongse21.data",
+        frameworkUrl: buildUrl + "/hongse21.framework.js",
+        codeUrl: buildUrl + "/hongse21.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "红色家书",
@@ -247,39 +228,50 @@
         showBanner: unityShowBanner,
       };
 
-      // 禁用Unity自动尺寸匹配
-      config.matchWebGLToCanvasSize = false;
+      // By default, Unity keeps WebGL canvas render target size matched with
+      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+      // Set this to false if you want to decouple this synchronization from
+      // happening inside the engine, and you would instead like to size up
+      // the canvas DOM size and WebGL render target sizes yourself.
+      // config.matchWebGLToCanvasSize = false;
 
-      // 移动设备设置
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: fill the whole browser client area with the game canvas:
+
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
         container.className = "unity-mobile";
         canvas.className = "unity-mobile";
-        
-        // 移动设备加载后调整Canvas
-        setTimeout(function() {
-          checkOrientation();
-          adjustCanvasSize();
-        }, 500);
+
+        // To lower canvas resolution on mobile devices to gain some
+        // performance, uncomment the following line:
+        // config.devicePixelRatio = 1;
+
+        // 移动设备加载时检查方向
+        setTimeout(checkOrientation, 100);
+
+      } else {
+        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
+
+        canvas.style.width = "960px";
+        canvas.style.height = "540px";
       }
 
       loadingBar.style.display = "block";
 
-      // 加载Unity
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
           progressBarFull.style.width = 100 * progress + "%";
           var percent = Math.round(progress * 100);
-          progressPercentText.textContent = "加载中..." + percent + "%";
+          progressPercentText.textContent =  "加载中..."+ percent + "%";
         }).then((unityInstance) => {
           loadingBar.style.display = "none";
-          
-          // Unity加载完成后调整Canvas
-          setTimeout(function() {
-            checkOrientation();
-            adjustCanvasSize();
-          }, 100);
+          // Unity加载完成后再次检查方向
+          checkOrientation();
         }).catch((message) => {
           alert(message);
         });
