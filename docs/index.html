@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <!-- 修改 viewport 元标签 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>红色家书</title>
     <link rel="shortcut icon" href="TemplateData/Myfavicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
@@ -156,12 +158,9 @@
       // config.matchWebGLToCanvasSize = false;
 
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
+        // 移动设备样式：用游戏画布填充整个浏览器客户端区域
+        // 注意：这里不再创建新的 viewport 标签，因为已经在 head 中设置了统一的 viewport
 
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
         container.className = "unity-mobile";
         canvas.className = "unity-mobile";
 
@@ -173,8 +172,7 @@
         setTimeout(checkOrientation, 100);
 
       } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-
+        // 桌面样式：在可以最大化到全屏的窗口中渲染游戏画布
         canvas.style.width = "960px";
         canvas.style.height = "540px";
       }
