@@ -102,8 +102,8 @@
       </div>
     </div>
     <script>
-      // 应用16:9比例的CSS样式函数
-      function ApplyAspectRatioCSS() {
+      // 应用16:9比例的CSS样式函数 - 确保在全局作用域
+      window.ApplyAspectRatioCSS = function() {
           var canvas = document.getElementById('unity-canvas');
           var container = document.getElementById('unity-container');
           
@@ -126,7 +126,7 @@
           canvas.style.objectFit = 'contain';
           
           console.log('Applied 16:9 aspect ratio CSS');
-      }
+      };
 
       // 横屏检测函数
       function checkOrientation() {
@@ -145,21 +145,21 @@
               orientationMessage.style.display = 'none';
               unityContainer.style.display = 'block';
               // 横屏时确保应用16:9样式
-              ApplyAspectRatioCSS();
+              window.ApplyAspectRatioCSS();
           }
       }
       
       // 页面加载时检查方向
       window.addEventListener('load', function() {
           checkOrientation();
-          ApplyAspectRatioCSS();
+          window.ApplyAspectRatioCSS();
       });
       
       // 窗口大小变化时检查方向
       window.addEventListener('resize', function() {
           checkOrientation();
           setTimeout(function() {
-              ApplyAspectRatioCSS();
+              window.ApplyAspectRatioCSS();
           }, 100);
       });
       
@@ -167,25 +167,25 @@
       window.addEventListener('orientationchange', function() {
           setTimeout(function() {
               checkOrientation();
-              ApplyAspectRatioCSS();
+              window.ApplyAspectRatioCSS();
           }, 300);
       });
 
       // 全屏变化事件
       document.addEventListener('fullscreenchange', function() {
-          setTimeout(ApplyAspectRatioCSS, 100);
+          setTimeout(window.ApplyAspectRatioCSS, 100);
       });
       
       document.addEventListener('webkitfullscreenchange', function() {
-          setTimeout(ApplyAspectRatioCSS, 100);
+          setTimeout(window.ApplyAspectRatioCSS, 100);
       });
       
       document.addEventListener('mozfullscreenchange', function() {
-          setTimeout(ApplyAspectRatioCSS, 100);
+          setTimeout(window.ApplyAspectRatioCSS, 100);
       });
       
       document.addEventListener('MSFullscreenChange', function() {
-          setTimeout(ApplyAspectRatioCSS, 100);
+          setTimeout(window.ApplyAspectRatioCSS, 100);
       });
 
       var container = document.querySelector("#unity-container");
@@ -214,11 +214,11 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/hongse18.loader.js";
+      var loaderUrl = buildUrl + "/hongse20.loader.js";
       var config = {
-          dataUrl: buildUrl + "/hongse18.data",
-          frameworkUrl: buildUrl + "/hongse18.framework.js",
-          codeUrl: buildUrl + "/hongse18.wasm",
+          dataUrl: buildUrl + "/hongse20.data",
+          frameworkUrl: buildUrl + "/hongse20.framework.js",
+          codeUrl: buildUrl + "/hongse20.wasm",
           streamingAssetsUrl: "StreamingAssets",
           companyName: "DefaultCompany",
           productName: "红色家书",
@@ -236,18 +236,15 @@
           // 移动设备加载时检查方向
           setTimeout(function() {
               checkOrientation();
-              ApplyAspectRatioCSS();
+              window.ApplyAspectRatioCSS();
           }, 500);
 
       } else {
           // 桌面端也使用CSS控制尺寸
-          ApplyAspectRatioCSS();
+          window.ApplyAspectRatioCSS();
       }
 
       loadingBar.style.display = "block";
-
-      // 为WebGL插件暴露函数
-      window.ApplyAspectRatioCSS = ApplyAspectRatioCSS;
 
       var script = document.createElement("script");
       script.src = loaderUrl;
@@ -261,7 +258,7 @@
               // Unity加载完成后再次检查方向和应用样式
               setTimeout(function() {
                   checkOrientation();
-                  ApplyAspectRatioCSS();
+                  window.ApplyAspectRatioCSS();
               }, 100);
           }).catch((message) => {
               alert(message);
