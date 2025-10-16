@@ -56,10 +56,21 @@
       }
 
       /* 强制16:9比例和居中显示的样式 */
+      body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: black;
+      }
+      
       #unity-container {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         background: black;
         display: flex;
         justify-content: center;
@@ -67,15 +78,28 @@
       }
       
       #unity-canvas {
-        /* 强制16:9比例 */
-        width: auto;
-        height: auto;
-        max-width: 100%;
-        max-height: 100%;
-        aspect-ratio: 16/9;
-        
-        /* 居中显示 */
-        object-fit: contain;
+        background: #231F20;
+      }
+      
+      /* 全屏时的特殊样式 */
+      #unity-container:fullscreen {
+        width: 100vw !important;
+        height: 100vh !important;
+      }
+      
+      #unity-container:-webkit-full-screen {
+        width: 100vw !important;
+        height: 100vh !important;
+      }
+      
+      #unity-container:-moz-full-screen {
+        width: 100vw !important;
+        height: 100vh !important;
+      }
+      
+      #unity-container:-ms-fullscreen {
+        width: 100vw !important;
+        height: 100vh !important;
       }
     </style>
   </head>
@@ -109,23 +133,35 @@
           
           if (!canvas || !container) return;
           
-          // 强制应用16:9样式
-          container.style.position = 'relative';
-          container.style.width = '100vw';
-          container.style.height = '100vh';
-          container.style.background = 'black';
-          container.style.display = 'flex';
-          container.style.justifyContent = 'center';
-          container.style.alignItems = 'center';
+          // 获取屏幕尺寸
+          var screenWidth = window.innerWidth;
+          var screenHeight = window.innerHeight;
           
-          canvas.style.width = 'auto';
-          canvas.style.height = 'auto';
-          canvas.style.maxWidth = '100%';
-          canvas.style.maxHeight = '100%';
-          canvas.style.aspectRatio = '16/9';
-          canvas.style.objectFit = 'contain';
+          // 计算16:9的适配尺寸
+          var targetAspect = 16 / 9;
+          var screenAspect = screenWidth / screenHeight;
           
-          console.log('Applied 16:9 aspect ratio CSS');
+          if (screenAspect > targetAspect) {
+            // 屏幕更宽，左右加黑边
+            var height = screenHeight;
+            var width = height * targetAspect;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.style.position = 'relative';
+            canvas.style.left = ((screenWidth - width) / 2) + 'px';
+            canvas.style.top = '0px';
+          } else {
+            // 屏幕更高，上下加黑边
+            var width = screenWidth;
+            var height = width / targetAspect;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.style.position = 'relative';
+            canvas.style.left = '0px';
+            canvas.style.top = ((screenHeight - height) / 2) + 'px';
+          }
+          
+          console.log('Applied 16:9 aspect ratio CSS: ' + screenWidth + 'x' + screenHeight);
       };
 
       // 横屏检测函数
@@ -143,7 +179,7 @@
           } else {
               // 横屏模式，隐藏提示
               orientationMessage.style.display = 'none';
-              unityContainer.style.display = 'block';
+              unityContainer.style.display = 'flex'; // 使用flex确保居中
               // 横屏时确保应用16:9样式
               window.ApplyAspectRatioCSS();
           }
@@ -157,8 +193,8 @@
       
       // 窗口大小变化时检查方向
       window.addEventListener('resize', function() {
-          checkOrientation();
           setTimeout(function() {
+              checkOrientation();
               window.ApplyAspectRatioCSS();
           }, 100);
       });
@@ -171,22 +207,31 @@
           }, 300);
       });
 
-      // 全屏变化事件
-      document.addEventListener('fullscreenchange', function() {
-          setTimeout(window.ApplyAspectRatioCSS, 100);
-      });
+      // 全屏变化事件 - 增强版本
+      function handleFullscreenChange() {
+          setTimeout(function() {
+              // 强制重新计算尺寸
+              window.ApplyAspectRatioCSS();
+              
+              // 额外检查：如果全屏，确保容器正确设置
+              var container = document.getElementById('unity-container');
+              if (document.fullscreenElement || 
+                  document.webkitFullscreenElement || 
+                  document.mozFullScreenElement ||
+                  document.msFullscreenElement) {
+                  container.style.width = '100vw';
+                  container.style.height = '100vh';
+                  container.style.display = 'flex';
+                  container.style.justifyContent = 'center';
+                  container.style.alignItems = 'center';
+              }
+          }, 150);
+      }
       
-      document.addEventListener('webkitfullscreenchange', function() {
-          setTimeout(window.ApplyAspectRatioCSS, 100);
-      });
-      
-      document.addEventListener('mozfullscreenchange', function() {
-          setTimeout(window.ApplyAspectRatioCSS, 100);
-      });
-      
-      document.addEventListener('MSFullscreenChange', function() {
-          setTimeout(window.ApplyAspectRatioCSS, 100);
-      });
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
@@ -214,11 +259,11 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/hongse20.loader.js";
+      var loaderUrl = buildUrl + "/hongse18.loader.js";
       var config = {
-          dataUrl: buildUrl + "/hongse20.data",
-          frameworkUrl: buildUrl + "/hongse20.framework.js",
-          codeUrl: buildUrl + "/hongse20.wasm",
+          dataUrl: buildUrl + "/hongse18.data",
+          frameworkUrl: buildUrl + "/hongse18.framework.js",
+          codeUrl: buildUrl + "/hongse18.wasm",
           streamingAssetsUrl: "StreamingAssets",
           companyName: "DefaultCompany",
           productName: "红色家书",
@@ -260,6 +305,13 @@
                   checkOrientation();
                   window.ApplyAspectRatioCSS();
               }, 100);
+              
+              // 监听Unity的全屏事件
+              if (unityInstance.Module) {
+                  unityInstance.Module.onResize = function() {
+                      setTimeout(window.ApplyAspectRatioCSS, 100);
+                  };
+              }
           }).catch((message) => {
               alert(message);
           });
