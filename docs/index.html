@@ -55,6 +55,29 @@
           display: block !important;
         }
       }
+
+      /* 新增：强制16:9比例和居中显示的样式 */
+      #unity-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      #unity-canvas {
+        /* 强制16:9比例 */
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: 100%;
+        aspect-ratio: 16/9;
+        
+        /* 居中显示 */
+        object-fit: contain;
+      }
     </style>
   </head>
   <body>
@@ -173,8 +196,9 @@
 
       } else {
         // 桌面样式：在可以最大化到全屏的窗口中渲染游戏画布
-        canvas.style.width = "960px";
-        canvas.style.height = "540px";
+        // 注意：这里不再设置固定尺寸，让CSS控制尺寸
+        // canvas.style.width = "960px";
+        // canvas.style.height = "540px";
       }
 
       loadingBar.style.display = "block";
