@@ -20,11 +20,29 @@
         height: 100%;
         overflow: hidden;
         background: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
       }
 
       /* 横屏提示样式 - 已移除 */
       #orientation-message {
         display: none;
+      }
+      
+      #unity-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      #unity-canvas {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
       }
     </style>
   </head>
@@ -48,22 +66,14 @@
       </div>
     </div>
     <script>
-      // 是否全屏的标志
-      let isFullscreenMode = false;
-      
-      // 核心函数：根据屏幕比例调整Canvas尺寸和位置
+      // 核心函数：根据屏幕比例调整Canvas尺寸和位置，始终保持16:9
       function adjustCanvasSize() {
         const canvas = document.getElementById('unity-canvas');
+        const container = document.getElementById('unity-container');
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         
-        // 如果不是全屏模式，使用Unity默认尺寸
-        if (!isFullscreenMode) {
-          // 非全屏时使用Unity默认设置
-          return;
-        }
-        
-        // 全屏模式下，按16:9比例显示
+        // 始终按16:9比例显示
         const targetAspect = 16 / 9;
         const screenAspect = screenWidth / screenHeight;
         
@@ -83,54 +93,27 @@
         canvas.style.width = canvasWidth + 'px';
         canvas.style.height = canvasHeight + 'px';
         
-        // 居中Canvas
-        canvas.style.position = 'absolute';
-        canvas.style.left = '50%';
-        canvas.style.top = '50%';
-        canvas.style.transform = 'translate(-50%, -50%)';
-        
-        console.log(`全屏模式: Canvas ${canvasWidth}x${canvasHeight}`);
-      }
-      
-      // 检测全屏状态变化
-      function handleFullscreenChange() {
-        isFullscreenMode = !!(
-          document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          document.mozFullScreenElement ||
-          document.msFullscreenElement
-        );
-        
-        // 延迟一点时间确保全屏状态已更新
-        setTimeout(adjustCanvasSize, 100);
+        console.log(`Canvas调整: ${canvasWidth}x${canvasHeight}, 屏幕: ${screenWidth}x${screenHeight}`);
       }
       
       // 初始化
       function init() {
         // 页面加载后调整Canvas
         window.addEventListener('load', function() {
-          // 移除横屏检测
+          adjustCanvasSize();
         });
         
         // 窗口大小变化时调整
         window.addEventListener('resize', function() {
-          // 移除横屏检测，仅调整Canvas大小
           adjustCanvasSize();
         });
         
         // 设备方向变化时调整
         window.addEventListener('orientationchange', function() {
           setTimeout(function() {
-            // 移除横屏检测，仅调整Canvas大小
             adjustCanvasSize();
           }, 300);
         });
-        
-        // 全屏变化时调整
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
       }
       
       // 立即执行初始化
@@ -201,12 +184,9 @@
         // performance, uncomment the following line:
         // config.devicePixelRatio = 1;
 
-        // 移除移动设备加载时的方向检查
       } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-
-        canvas.style.width = "960px";
-        canvas.style.height = "540px";
+        // 桌面设备也使用自适应尺寸
+        // 不再设置固定尺寸，让adjustCanvasSize函数处理
       }
 
       loadingBar.style.display = "block";
@@ -220,7 +200,8 @@
           progressPercentText.textContent =  "加载中..."+ percent + "%";
         }).then((unityInstance) => {
           loadingBar.style.display = "none";
-          // 移除Unity加载完成后的方向检查
+          // Unity加载完成后调整Canvas尺寸
+          adjustCanvasSize();
         }).catch((message) => {
           alert(message);
         });
