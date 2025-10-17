@@ -40,9 +40,18 @@
       }
       
       #unity-canvas {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
+        /* 移除max-width和max-height限制 */
+        /* 使用绝对定位确保始终居中 */
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+      
+      /* 全屏状态下的特殊处理 */
+      .fullscreen #unity-canvas {
+        /* 全屏时确保Canvas始终可见 */
+        z-index: 9999;
       }
     </style>
   </head>
@@ -66,6 +75,9 @@
       </div>
     </div>
     <script>
+      // 保存Unity实例引用
+      let unityInstance = null;
+      
       // 核心函数：根据屏幕比例调整Canvas尺寸和位置，始终保持16:9
       function adjustCanvasSize() {
         const canvas = document.getElementById('unity-canvas');
@@ -93,7 +105,36 @@
         canvas.style.width = canvasWidth + 'px';
         canvas.style.height = canvasHeight + 'px';
         
-        console.log(`Canvas调整: ${canvasWidth}x${canvasHeight}, 屏幕: ${screenWidth}x${screenHeight}`);
+        // 更新Unity渲染尺寸（如果Unity实例已创建）
+        if (unityInstance && unityInstance.Module) {
+          unityInstance.Module.canvas.style.width = canvasWidth + 'px';
+          unityInstance.Module.canvas.style.height = canvasHeight + 'px';
+          // 强制Unity重新计算渲染尺寸
+          if (unityInstance.Module.setCanvasSize) {
+            unityInstance.Module.setCanvasSize(canvasWidth, canvasHeight);
+          }
+        }
+        
+        console.log(`Canvas调整: ${canvasWidth}x${canvasHeight}, 屏幕: ${screenWidth}x${screenHeight}, 方向: ${screenWidth > screenHeight ? '横屏' : '竖屏'}`);
+      }
+      
+      // 检测全屏状态变化
+      function handleFullscreenChange() {
+        const isFullscreen = !!(
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullScreenElement ||
+          document.msFullscreenElement
+        );
+        
+        if (isFullscreen) {
+          document.body.classList.add('fullscreen');
+        } else {
+          document.body.classList.remove('fullscreen');
+        }
+        
+        // 全屏状态变化后立即调整Canvas尺寸
+        setTimeout(adjustCanvasSize, 100);
       }
       
       // 初始化
@@ -114,6 +155,12 @@
             adjustCanvasSize();
           }, 300);
         });
+        
+        // 全屏变化时调整
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
       }
       
       // 立即执行初始化
@@ -163,12 +210,8 @@
         showBanner: unityShowBanner,
       };
 
-      // By default, Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
+      // 设置不自动匹配Canvas尺寸，由我们自己控制
+      config.matchWebGLToCanvasSize = false;
 
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         // Mobile device style: fill the whole browser client area with the game canvas:
@@ -198,10 +241,21 @@
           progressBarFull.style.width = 100 * progress + "%";
           var percent = Math.round(progress * 100);
           progressPercentText.textContent =  "加载中..."+ percent + "%";
-        }).then((unityInstance) => {
+        }).then((instance) => {
           loadingBar.style.display = "none";
+          // 保存Unity实例引用
+          unityInstance = instance;
           // Unity加载完成后调整Canvas尺寸
           adjustCanvasSize();
+          
+          // 重写全屏按钮行为，确保全屏时正确调整尺寸
+          const fullscreenButton = document.getElementById('unity-fullscreen-button');
+          if (fullscreenButton) {
+            fullscreenButton.addEventListener('click', function() {
+              // 延迟一点时间确保全屏状态已更新，然后调整Canvas尺寸
+              setTimeout(adjustCanvasSize, 300);
+            });
+          }
         }).catch((message) => {
           alert(message);
         });
