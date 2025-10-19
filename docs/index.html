@@ -45,10 +45,12 @@
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        /* 确保Canvas使用高质量渲染 */
+        /* 优化图像渲染 - 针对电脑端特别优化 */
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
         image-rendering: pixelated;
+        image-rendering: -moz-crisp-edges;
+        -ms-interpolation-mode: nearest-neighbor;
       }
     </style>
   </head>
@@ -74,6 +76,8 @@
     <script>
       // 保存Unity实例引用
       let unityInstance = null;
+      // 检测是否为移动设备
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
       // 核心函数：根据屏幕比例调整Canvas尺寸和位置，始终保持16:9
       function adjustCanvasSize() {
@@ -97,6 +101,10 @@
           canvasHeight = canvasWidth / targetAspect;
         }
         
+        // 确保尺寸为整数，避免亚像素渲染
+        canvasWidth = Math.floor(canvasWidth);
+        canvasHeight = Math.floor(canvasHeight);
+        
         // 设置Canvas显示尺寸
         canvas.style.width = canvasWidth + 'px';
         canvas.style.height = canvasHeight + 'px';
@@ -104,28 +112,50 @@
         // 获取设备像素比
         const devicePixelRatio = window.devicePixelRatio || 1;
         
+        // 计算渲染尺寸 - 电脑端使用更高的基础分辨率
+        let renderWidth, renderHeight;
+        
+        if (isMobile) {
+          // 移动设备：使用设备像素比
+          renderWidth = Math.round(canvasWidth * devicePixelRatio);
+          renderHeight = Math.round(canvasHeight * devicePixelRatio);
+        } else {
+          // 电脑端：使用更高的基础分辨率，即使设备像素比是1
+          // 这样可以提高画面质量
+          const baseResolution = 1920; // 使用1920作为基础宽度
+          const scaleFactor = Math.min(1, canvasWidth / baseResolution);
+          renderWidth = Math.round(canvasWidth / scaleFactor);
+          renderHeight = Math.round(canvasHeight / scaleFactor);
+          
+          // 确保渲染尺寸不超过实际需要
+          const maxReasonableSize = 2560; // 最大合理尺寸
+          if (renderWidth > maxReasonableSize) {
+            const scale = maxReasonableSize / renderWidth;
+            renderWidth = maxReasonableSize;
+            renderHeight = Math.round(renderHeight * scale);
+          }
+        }
+        
         // 设置Canvas实际渲染尺寸
-        // 这是解决模糊问题的关键 - 确保Canvas的渲染分辨率与显示尺寸匹配
-        if (canvas.width !== Math.round(canvasWidth * devicePixelRatio) || 
-            canvas.height !== Math.round(canvasHeight * devicePixelRatio)) {
-          canvas.width = Math.round(canvasWidth * devicePixelRatio);
-          canvas.height = Math.round(canvasHeight * devicePixelRatio);
+        if (canvas.width !== renderWidth || canvas.height !== renderHeight) {
+          canvas.width = renderWidth;
+          canvas.height = renderHeight;
+          
+          console.log(`Canvas调整: 显示 ${canvasWidth}x${canvasHeight}, 渲染 ${renderWidth}x${renderHeight}, 设备像素比: ${devicePixelRatio}`);
           
           // 通知Unity Canvas尺寸已更改
           if (unityInstance && unityInstance.Module) {
             // 强制Unity重新设置Canvas尺寸
-            if (unityInstance.Module.SetCanvasSize) {
-              unityInstance.Module.SetCanvasSize(canvas.width, canvas.height);
+            if (typeof unityInstance.Module.SetCanvasSize === 'function') {
+              unityInstance.Module.SetCanvasSize(renderWidth, renderHeight);
             }
             
-            // 如果Unity有调整渲染尺寸的方法，调用它
-            if (unityInstance.Module.SetApplicationSize) {
-              unityInstance.Module.SetApplicationSize(canvasWidth, canvasHeight);
+            // 尝试调用Unity内部方法更新渲染
+            if (typeof unityInstance.Module.InternalSetCanvasSize === 'function') {
+              unityInstance.Module.InternalSetCanvasSize(renderWidth, renderHeight);
             }
           }
         }
-        
-        console.log(`Canvas调整: 显示 ${canvasWidth}x${canvasHeight}, 渲染 ${canvas.width}x${canvas.height}, 设备像素比: ${devicePixelRatio}`);
       }
       
       // 检测全屏状态变化
@@ -204,11 +234,11 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/hongse24.loader.js";
+      var loaderUrl = buildUrl + "/hongse23.loader.js";
       var config = {
-        dataUrl: buildUrl + "/hongse24.data",
-        frameworkUrl: buildUrl + "/hongse24.framework.js",
-        codeUrl: buildUrl + "/hongse24.wasm",
+        dataUrl: buildUrl + "/hongse23.data",
+        frameworkUrl: buildUrl + "/hongse23.framework.js",
+        codeUrl: buildUrl + "/hongse23.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "红色家书",
@@ -219,7 +249,7 @@
       // 设置不自动匹配Canvas尺寸，由我们自己控制
       config.matchWebGLToCanvasSize = false;
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      if (isMobile) {
         // Mobile device style: fill the whole browser client area with the game canvas:
 
         var meta = document.createElement('meta');
