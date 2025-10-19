@@ -45,6 +45,10 @@
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
+        /* 确保Canvas使用高质量渲染 */
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
       }
     </style>
   </head>
@@ -93,19 +97,35 @@
           canvasHeight = canvasWidth / targetAspect;
         }
         
-        // 设置Canvas尺寸
+        // 设置Canvas显示尺寸
         canvas.style.width = canvasWidth + 'px';
         canvas.style.height = canvasHeight + 'px';
         
-        // 更新Unity渲染尺寸（如果Unity实例已创建）
-        if (unityInstance && unityInstance.Module) {
-          // 强制Unity重新计算渲染尺寸
-          if (unityInstance.Module.SetCanvasSize) {
-            unityInstance.Module.SetCanvasSize(canvasWidth, canvasHeight);
+        // 获取设备像素比
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        
+        // 设置Canvas实际渲染尺寸
+        // 这是解决模糊问题的关键 - 确保Canvas的渲染分辨率与显示尺寸匹配
+        if (canvas.width !== Math.round(canvasWidth * devicePixelRatio) || 
+            canvas.height !== Math.round(canvasHeight * devicePixelRatio)) {
+          canvas.width = Math.round(canvasWidth * devicePixelRatio);
+          canvas.height = Math.round(canvasHeight * devicePixelRatio);
+          
+          // 通知Unity Canvas尺寸已更改
+          if (unityInstance && unityInstance.Module) {
+            // 强制Unity重新设置Canvas尺寸
+            if (unityInstance.Module.SetCanvasSize) {
+              unityInstance.Module.SetCanvasSize(canvas.width, canvas.height);
+            }
+            
+            // 如果Unity有调整渲染尺寸的方法，调用它
+            if (unityInstance.Module.SetApplicationSize) {
+              unityInstance.Module.SetApplicationSize(canvasWidth, canvasHeight);
+            }
           }
         }
         
-        console.log(`Canvas调整: ${canvasWidth}x${canvasHeight}, 屏幕: ${screenWidth}x${screenHeight}`);
+        console.log(`Canvas调整: 显示 ${canvasWidth}x${canvasHeight}, 渲染 ${canvas.width}x${canvas.height}, 设备像素比: ${devicePixelRatio}`);
       }
       
       // 检测全屏状态变化
@@ -209,8 +229,7 @@
         container.className = "unity-mobile";
         canvas.className = "unity-mobile";
 
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
+        // 在移动设备上，我们可以设置设备像素比，但为了性能，我们设置为1
         // config.devicePixelRatio = 1;
 
       } else {
